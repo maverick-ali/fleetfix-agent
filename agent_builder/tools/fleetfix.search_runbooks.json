@@ -1,0 +1,13 @@
+{
+    "id":  "fleetfix.search_runbooks",
+    "type":  "index_search",
+    "description":  "FleetFix - Search runbooks",
+    "tags":  [
+                 "FleetFix - Search runbooks"
+             ],
+    "configuration":  {
+                          "pattern":  "fleetfix_runbooks",
+                          "row_limit":  3,
+                          "custom_instructions":  "If nlQuery contains a token with underscores (example: context_canceled, badrequest_400), treat it as an exact signature and generate ES|QL that filters signature == \"\u003ctoken\u003e\" and returns signature,title,root_causes,fix_steps,verify_steps with LIMIT 1.\nOtherwise, search runbooks by relevance using title, root_causes, fix_steps, verify_steps. Keep top 3.\nKeep results concise and actionable."
+                      }
+}

@@ -1,0 +1,62 @@
+version: "1"
+name: fleetfix_create_ticket
+description: Create a FleetFix ticket in the fleetfix_tickets index.
+inputs:
+  - name: title
+    type: string
+    required: true
+    description: Ticket title
+
+  - name: severity
+    type: string
+    required: false
+    default: medium
+    description: low | medium | high
+
+  - name: signature
+    type: string
+    required: true
+    description: Error signature (e.g., context_canceled)
+
+  - name: recommended_steps
+    type: string
+    required: true
+    description: Fix steps to store in the ticket
+
+  - name: raw_log_sample
+    type: string
+    required: false
+    default: ""
+    description: Optional raw log snippet
+
+  - name: host_name
+    type: string
+    required: false
+    default: ""
+    description: Optional host name
+
+triggers:
+  - type: manual
+
+steps:
+  - name: index_ticket
+    type: elasticsearch.request
+    with:
+      method: POST
+      path: /fleetfix_tickets/_doc?refresh=wait_for
+      body:
+        created_at: "${{ execution.startedAt | date: '%s' | times: 1000 }}"
+        title: "{{ inputs.title }}"
+        severity: "{{ inputs.severity }}"
+        signature: "{{ inputs.signature }}"
+        status: "open"
+        recommended_steps: "{{ inputs.recommended_steps }}"
+        raw_log_sample: "{{ inputs.raw_log_sample }}"
+        "host.name": "{{ inputs.host_name }}"
+
+  - name: done
+    type: console
+    with:
+      message: |
+        Created ticket id: {{ steps.index_ticket.output._id }}
+        Result: {{ steps.index_ticket.output.result }}

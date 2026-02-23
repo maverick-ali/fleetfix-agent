@@ -1,0 +1,31 @@
+{
+    "id":  "fleetfix.detect_failure_clusters",
+    "type":  "esql",
+    "description":  "Summarizes Fleet/Elastic Agent failures from fleetfix_logs over a recent time range. Returns counts, last seen time, and a sample message per error signature. Use this first to decide which runbook to fetch.",
+    "tags":  [
+                 "FleetFix - Detect failure clusters"
+             ],
+    "configuration":  {
+                          "query":  "FROM fleetfix_logs\r\n| WHERE TRANGE(NOW() - TO_TIMEDURATION(?lookback), NOW())\r\n| WHERE (?host_name == \"*\" OR host.name == ?host_name)\r\n| STATS\r\n    error_count = COUNT(*),\r\n    last_seen = MAX(@timestamp),\r\n    sample_host = LAST(host.name, @timestamp),\r\n    sample_message = LAST(message, @timestamp)\r\n  BY error.signature\r\n| SORT error_count DESC\r\n| KEEP error.signature, error_count, last_seen, sample_host, sample_message\r\n| LIMIT ?limit",
+                          "params":  {
+                                         "lookback":  {
+                                                          "type":  "string",
+                                                          "description":  "Time range offset from NOW (e.g., 1h, 24h) in hours",
+                                                          "optional":  true,
+                                                          "defaultValue":  "24 hours"
+                                                      },
+                                         "host_name":  {
+                                                           "type":  "string",
+                                                           "description":  "Host filter; use * for all hosts",
+                                                           "optional":  true,
+                                                           "defaultValue":  "*"
+                                                       },
+                                         "limit":  {
+                                                       "type":  "integer",
+                                                       "description":  "Max number of signatures to return",
+                                                       "optional":  true,
+                                                       "defaultValue":  10
+                                                   }
+                                     }
+                      }
+}

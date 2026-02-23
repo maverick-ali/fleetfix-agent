@@ -1,0 +1,60 @@
+##########################################
+######## Agent builder hackathon #########
+##########################################
+############ FleetFix Agent ##############
+##########################################
+
+# Create 3 indices with safe mappings
+
+# 1st indices
+PUT fleetfix_logs
+{
+  "mappings": {
+    "properties": {
+      "@timestamp": { "type": "date" },
+      "message":    { "type": "text" },
+      "log.level":  { "type": "keyword" },
+      "host.name":  { "type": "keyword" },
+      "agent.id":   { "type": "keyword" },
+      "service.name": { "type": "keyword" },
+      "event.dataset": { "type": "keyword" },
+      "error.signature": { "type": "keyword" }
+    }
+  }
+}
+
+# 2nd indices
+PUT fleetfix_runbooks
+{
+  "mappings": {
+    "properties": {
+      "signature":   { "type": "keyword" },
+      "title":       { "type": "text" },
+      "root_causes": { "type": "text" },
+      "fix_steps":   { "type": "text" },
+      "verify_steps":{ "type": "text" },
+      "tags":        { "type": "keyword" },
+      "updated_at":  { "type": "date" }
+    },
+    "_meta": {
+        "description": "FleetFix runbooks KB. Each document is a troubleshooting playbook keyed by `signature` (e.g., context_canceled, badrequest_400). Use this index to fetch root causes, fix steps, and verification steps for Elastic Agent/Fleet enrollment and policy errors."
+    }
+  }
+}
+
+# 3rd indices
+PUT fleetfix_tickets
+{
+  "mappings": {
+    "properties": {
+      "created_at": { "type": "date" },
+      "title":      { "type": "text" },
+      "severity":   { "type": "keyword" },
+      "signature":  { "type": "keyword" },
+      "status":     { "type": "keyword" },
+      "recommended_steps": { "type": "text" },
+      "raw_log_sample":    { "type": "text" },
+      "host.name":         { "type": "keyword" }
+    }
+  }
+}

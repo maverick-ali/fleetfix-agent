@@ -1,0 +1,15 @@
+# secrets
+.env
+.env.*
+*.key
+*.pem
+env.ps1
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# generated
+data/

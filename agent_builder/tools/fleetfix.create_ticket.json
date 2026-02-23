@@ -1,0 +1,12 @@
+{
+    "id":  "fleetfix.create_ticket",
+    "type":  "workflow",
+    "description":  "Create a FleetFix ticket in Elasticsearch (fleetfix_tickets) when the user asks to log/track an issue or when a clear remediation plan is ready.”",
+    "tags":  [
+                 "fleetfix.create_ticket"
+             ],
+    "configuration":  {
+                          "workflow_id":  "workflow-d444466b-1887-468b-9385-397f3df1decb",
+                          "wait_for_completion":  true
+                      }
+}

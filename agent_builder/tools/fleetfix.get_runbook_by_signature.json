@@ -1,0 +1,18 @@
+{
+    "id":  "fleetfix.get_runbook_by_signature",
+    "type":  "esql",
+    "description":  "Deterministic tool to search runbooks with the exact signatures",
+    "tags":  [
+                 "FleetFix - Search runbooks"
+             ],
+    "configuration":  {
+                          "query":  "FROM fleetfix_runbooks\r\n| WHERE signature == ?signature\r\n| KEEP signature, title, root_causes, fix_steps, verify_steps, tags\r\n| LIMIT 1",
+                          "params":  {
+                                         "signature":  {
+                                                           "type":  "string",
+                                                           "description":  "signature of the runbook to search for",
+                                                           "optional":  false
+                                                       }
+                                     }
+                      }
+}
