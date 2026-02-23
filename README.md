@@ -25,46 +25,8 @@ Fleet/Elastic Agent enrollment and policy issues are repetitive, high-friction o
 
 ---
 
-## 2. Repo Tree
 
-```
-fleetfix-agent/
-  README.md                          # Project documentation
-  LICENSE                            # OSS license (MIT)
-  .gitignore                         # Secrets + generated files ignored
-  agent_builder/
-    agents/
-      fleetfix_agent.json            # Exported Agent Builder agent definition
-    tools/
-      fleetfix.detect_failure_clusters.json
-      fleetfix.search_runbooks.json
-      fleetfix.get_runbook_by_signature.json
-      fleetfix.create_ticket.json    # Workflow tool definition (workflow_id rewired per space during import)
-  workflows/
-    fleetfix_create_ticket.yaml      # Elastic Workflow used to create tickets
-  dashboards/
-    fleetfix_saved_objects.ndjson    # Kibana saved objects export for dashboard (optional)
-  data/
-    fleetfix_logs.ndjson             # Generated synthetic logs (large dataset)
-    fleetfix_runbooks.ndjson         # Generated runbooks KB
-  scripts/
-    env.example.ps1                  # Template for local env vars (copy -> env.ps1)
-    create_indices.ps1               # Creates indices + mappings via Elasticsearch API
-    create_indices.devtools.txt      # UI fallback: paste into Kibana Dev Tools
-    generate_fleetfix_data.ps1       # Generates synthetic fleetfix_logs.ndjson
-    generate_fleetfix_runbooks.ps1   # Generates fleetfix_runbooks.ndjson
-    bulk_ingest.ps1                  # Bulk ingest NDJSON into Elasticsearch (_bulk)
-    export_agent_builder.ps1         # Export tools + agent from Kibana (for maintainers)
-    import_agent_builder.ps1         # Import tools + agent into Kibana (supports -WorkflowId)
-    export_dashboard.ps1             # Export dashboard saved objects by title (for maintainers)
-    import_saved_objects.ps1         # Import saved objects NDJSON into Kibana
-    smoke_test.ps1                   # Minimal verification (tools + agent)
-    setup_all.ps1                    # One-shot setup script (prompts for workflow id)
-```
-
----
-
-## 3. Build Steps
+## 2. Build Steps
 
 ### Prerequisites
 
@@ -98,7 +60,7 @@ Then create the workflow from `workflows/fleetfix_create_ticket.yaml`.
 
 ---
 
-### 3.1 Automated build (one-shot)
+### 2.1 Automated build (one-shot)
 
 1) Clone / fork the repo
 ```powershell
@@ -135,7 +97,7 @@ What the one-shot script does:
 
 ---
 
-### 3.2 UI-only setup (fallback)
+### 2.2 UI-only setup (fallback)
 
 1) Create indices
 - Kibana → Dev Tools → Console
@@ -172,7 +134,7 @@ If you do not pass `-WorkflowId`, the workflow tool may be skipped/left unwired 
 
 ---
 
-### 3.3 Smoke test (validate the build)
+### 2.3 Smoke test (validate the build)
 
 Run:
 ```powershell
@@ -186,7 +148,7 @@ Expected:
 
 ---
 
-## 4. Demo Steps
+## 3. Demo Steps
 
 Open Kibana → Agent Builder → **FleetFix Agent** and run:
 
@@ -203,7 +165,7 @@ Open Kibana → Agent Builder → **FleetFix Agent** and run:
 
 ---
 
-## 5. Notes / Troubleshooting
+## 4. Notes / Troubleshooting
 
 - **ES_URL vs KIBANA_URL in spaces**
   - `KIBANA_URL` may include `/s/<space_id>`
@@ -228,5 +190,5 @@ Open Kibana → Agent Builder → **FleetFix Agent** and run:
 
 ---
 
-## 6. License
+## 5. License
 MIT — see `LICENSE`
