@@ -10,22 +10,18 @@ Fleet/Elastic Agent enrollment and policy issues are repetitive, high-friction o
 
 ## Architecture
 
-```mermaid
 flowchart TD
-  U[Operator / SRE] -->|chat| AB[FleetFix Agent<br/>Elastic Agent Builder + Managed LLM]
-  AB --> T1[Tool: detect_failure_clusters<br/>ES|QL]
-  AB --> T2[Tool: search_runbooks<br/>Index Search Tool]
-  AB --> T3[Tool: get_runbook_by_signature<br/>ES|QL]
-  AB --> T4[Tool: create_ticket<br/>Workflow Tool]
+  U[Operator / SRE] -->|chat| AB["FleetFix Agent<br/>Elastic Agent Builder + Managed LLM"]
+  AB --> T1["Tool: detect_failure_clusters<br/>ESQL"]
+  AB --> T2["Tool: search_runbooks<br/>Index Search Tool"]
+  AB --> T3["Tool: get_runbook_by_signature<br/>ESQL"]
+  AB --> T4["Tool: create_ticket<br/>Workflow Tool"]
 
   T1 --> ES1[(fleetfix_logs)]
   T2 --> ES2[(fleetfix_runbooks)]
   T3 --> ES2
-  T4 --> WF[Workflow: fleetfix_create_ticket.yaml]
+  T4 --> WF["Workflow: fleetfix_create_ticket.yaml"]
   WF --> ES3[(fleetfix_tickets)]
-```
-
----
 
 ## 1. Data Model
 
@@ -53,11 +49,11 @@ fleetfix-agent/
       fleetfix.detect_failure_clusters.json
       fleetfix.search_runbooks.json
       fleetfix.get_runbook_by_signature.json
-      fleetfix.create_ticket.json    # Workflow tool definition
+      fleetfix.create_ticket.json    # Workflow tool definition (workflow_id rewired per space during import)
   workflows/
     fleetfix_create_ticket.yaml      # Elastic Workflow used to create tickets
   dashboards/
-    fleetfix_saved_objects.ndjson    # Kibana saved objects export for dashboard (optional but recommended)
+    fleetfix_saved_objects.ndjson    # Kibana saved objects export for dashboard (optional)
   data/
     fleetfix_logs.ndjson             # Generated synthetic logs (large dataset)
     fleetfix_runbooks.ndjson         # Generated runbooks KB
@@ -69,11 +65,11 @@ fleetfix-agent/
     generate_fleetfix_runbooks.ps1   # Generates fleetfix_runbooks.ndjson
     bulk_ingest.ps1                  # Bulk ingest NDJSON into Elasticsearch (_bulk)
     export_agent_builder.ps1         # Export tools + agent from Kibana (for maintainers)
-    import_agent_builder.ps1         # Import tools + agent into Kibana
+    import_agent_builder.ps1         # Import tools + agent into Kibana (supports -WorkflowId)
     export_dashboard.ps1             # Export dashboard saved objects by title (for maintainers)
     import_saved_objects.ps1         # Import saved objects NDJSON into Kibana
     smoke_test.ps1                   # Minimal verification (tools + agent)
-    setup_all.ps1                    # One-shot setup script
+    setup_all.ps1                    # One-shot setup script (prompts for workflow id)
 ```
 
 ---
@@ -87,23 +83,28 @@ You need an Elastic deployment (Elastic Cloud / Serverless or self-managed) with
 - Kibana URL (example): `https://<deployment>.kb.<region>.<provider>.elastic.cloud`
 - Elasticsearch URL (example): `https://<deployment>.es.<region>.<provider>.elastic.cloud`
 
+**Kibana spaces:** If you want to install FleetFix into a non-default space, set `KIBANA_URL` to include:
+`/s/<space_id>` (example: `https://...kb...elastic.cloud/s/fleetfix-release-test`)
+
+**Important:** Do **not** add `/s/<space_id>` to `ES_URL` — spaces apply to Kibana APIs, not Elasticsearch endpoints.
+
 #### B) API key
 Create an API key that can:
 - Create indices and bulk index into `fleetfix_*` (Elasticsearch)
-- Create/update Agent Builder tools and agents, and execute tools (Kibana)
+- Create/update Agent Builder tools and agents, execute tools, and converse with agents (Kibana)
 - Import Saved Objects (dashboard) (Kibana)
 
 Notes:
 - Kibana POST/PUT APIs require `kbn-xsrf: true` header.
-- Agent Builder “Execute a Tool” endpoint is `POST /api/agent_builder/tools/_execute`.
 - Bulk ingestion uses NDJSON and the `_bulk` API with `Content-Type: application/x-ndjson` and a trailing newline.
 
 #### C) Workflows enabled (required for ticket creation)
-Workflows are disabled by default. Enable them in Kibana:
+Workflows are disabled by default. Enable them in Kibana **per space**:
 1. Stack Management → Advanced Settings
 2. Search `workflows:ui:enabled`
 3. Toggle ON and save, then reload Kibana
-4. Create the workflow from `workflows/fleetfix_create_ticket.yaml`
+
+Then create the workflow from `workflows/fleetfix_create_ticket.yaml`.
 
 ---
 
@@ -128,12 +129,18 @@ cd fleetfix-agent
 .\scripts\setup_all.ps1 -LogCount 500 -HostCount 20
 ```
 
-What it does:
+During Step 4, the script prompts you for the **workflow id** (workflow tools must reference a workflow that exists in *this* space):
+- Create the workflow in Kibana (from `workflows/fleetfix_create_ticket.yaml`)
+- Copy the workflow id from the browser URL (it looks like `workflow-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`)
+- Paste it when prompted
+
+What the one-shot script does:
 - Creates indices (`fleetfix_logs`, `fleetfix_runbooks`, `fleetfix_tickets`)
 - Generates a larger dataset for charts
 - Bulk ingests logs + runbooks
 - Imports dashboard saved objects (if `dashboards/fleetfix_saved_objects.ndjson` exists)
 - Imports Agent Builder tools + agent
+  - If you provided a workflow id, it rewires `fleetfix.create_ticket` to the workflow in your space
 - Runs a smoke test
 
 ---
@@ -159,15 +166,19 @@ What it does:
 4) Enable workflows + create workflow
 - Enable `workflows:ui:enabled`
 - Create workflow from: `workflows/fleetfix_create_ticket.yaml`
+- Copy the workflow id from the URL
 
 5) Import dashboard (optional)
 - Kibana → Stack Management → Saved Objects → Import
 - Import: `dashboards/fleetfix_saved_objects.ndjson`
 
 6) Import Agent Builder tools + agent
+If you have the workflow id, pass it so the workflow tool is created correctly in this space:
 ```powershell
-.\scripts\import_agent_builder.ps1 -KibanaUrl $env:KIBANA_URL -ApiKey $env:API_KEY
+.\scripts\import_agent_builder.ps1 -KibanaUrl $env:KIBANA_URL -ApiKey $env:API_KEY -WorkflowId "workflow-...."
 ```
+
+If you do not pass `-WorkflowId`, the workflow tool may be skipped/left unwired in a fresh space.
 
 ---
 
@@ -204,6 +215,9 @@ Open Kibana → Agent Builder → **FleetFix Agent** and run:
 
 ## 5. Notes / Troubleshooting
 
+- **ES_URL vs KIBANA_URL in spaces**
+  - `KIBANA_URL` may include `/s/<space_id>`
+  - `ES_URL` must not include `/s/<space_id>`
 - **Bulk ingest errors**
   - The Bulk API expects NDJSON with alternating action/source lines and a final newline; use `Content-Type: application/x-ndjson`.
 - **Kibana POST APIs fail**
@@ -211,11 +225,12 @@ Open Kibana → Agent Builder → **FleetFix Agent** and run:
 - **Saved Objects import issues**
   - Saved objects are version-sensitive; import into a compatible Kibana version.
 - **Workflow tool fails**
-  - Confirm workflows are enabled (`workflows:ui:enabled`) and the workflow exists before using `fleetfix.create_ticket`.
+  - Confirm workflows are enabled (`workflows:ui:enabled`) and the workflow exists in the current space.
+  - Ensure you import tools with `-WorkflowId` in a fresh space so `fleetfix.create_ticket` is wired correctly.
 - **ES|QL time duration**
   - Use a duration like `"24 hours"` (string converted to timeduration) for lookback in Tool1.
 
-### Useful docs
+### Useful docs (Elastic)
 - Agent Builder API overview: https://www.elastic.co/docs/api/doc/kibana/group/endpoint-agent-builder
 - Execute a tool (`kbn-xsrf` required): https://www.elastic.co/docs/api/doc/kibana/v9/operation/operation-post-agent-builder-tools-execute
 - Workflows setup (`workflows:ui:enabled`): https://www.elastic.co/docs/explore-analyze/workflows/setup
