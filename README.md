@@ -10,18 +10,8 @@ Fleet/Elastic Agent enrollment and policy issues are repetitive, high-friction o
 
 ## Architecture
 
-flowchart TD
-  U[Operator / SRE] -->|chat| AB["FleetFix Agent<br/>Elastic Agent Builder + Managed LLM"]
-  AB --> T1["Tool: detect_failure_clusters<br/>ESQL"]
-  AB --> T2["Tool: search_runbooks<br/>Index Search Tool"]
-  AB --> T3["Tool: get_runbook_by_signature<br/>ESQL"]
-  AB --> T4["Tool: create_ticket<br/>Workflow Tool"]
+<img width="1092" height="602" alt="image" src="https://github.com/user-attachments/assets/1b19e742-1a67-47f0-a8ba-b5ab04bba134" />
 
-  T1 --> ES1[(fleetfix_logs)]
-  T2 --> ES2[(fleetfix_runbooks)]
-  T3 --> ES2
-  T4 --> WF["Workflow: fleetfix_create_ticket.yaml"]
-  WF --> ES3[(fleetfix_tickets)]
 
 ## 1. Data Model
 
