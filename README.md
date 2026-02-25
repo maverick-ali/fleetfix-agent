@@ -8,6 +8,8 @@ Fleet/Elastic Agent enrollment and policy issues are repetitive, high-friction o
 - “What’s the fix?” (fetch the best runbook)
 - “Track it” (create a ticket record consistently)
 
+![FleetFix Agent](media/fleetfix-agent-media.png)
+
 ## Architecture
 
 <img width="1092" height="602" alt="image" src="https://github.com/user-attachments/assets/1b19e742-1a67-47f0-a8ba-b5ab04bba134" />
